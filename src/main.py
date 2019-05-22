@@ -1,4 +1,5 @@
 import argparse
+import datetime
 
 import tensorflow as tf
 import tensorflow_datasets as tfds
@@ -7,9 +8,9 @@ from tensorflow.python import keras
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--batch-size', type=int, default=256)
-    parser.add_argument('--epochs', type=int, default=300)
-    parser.add_argument('--lr', type=float, default=0.01)
+    parser.add_argument('--batch-size', type=int, default=32)
+    parser.add_argument('--epochs', type=int, default=100)
+    parser.add_argument('--lr', type=float, default=0.001)
     return parser.parse_args()
 
 
@@ -32,20 +33,24 @@ def main():
     test_dataset = data['test'].map(preprocess).batch(args.batch_size)
 
     model = keras.Sequential([
-        keras.layers.Reshape((28, 28), input_shape=(28, 28, 1)),
+        keras.layers.Reshape((784, 1), input_shape=(28, 28, 1)),
         keras.layers.CuDNNLSTM(128),
         keras.layers.Dense(10, activation='softmax')
     ])
     model.summary()
 
-    opt = keras.optimizers.SGD(lr=args.lr)
+    opt = keras.optimizers.Adam(lr=args.lr, clipnorm=1.)
     model.compile(loss='sparse_categorical_crossentropy',
                   optimizer=opt,
                   metrics=['accuracy'])
 
+    log_dir = "logs/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    tensorboard = keras.callbacks.TensorBoard(log_dir=log_dir, profile_batch=0)
+
     model.fit(train_dataset,
               epochs=args.epochs,
-              validation_data=test_dataset)
+              validation_data=test_dataset,
+              callbacks=[tensorboard])
 
 
 if __name__ == '__main__':
