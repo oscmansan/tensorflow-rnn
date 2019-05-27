@@ -34,7 +34,7 @@ def main():
 
     model = keras.Sequential([
         keras.layers.Reshape((784, 1), input_shape=(28, 28, 1)),
-        keras.layers.CuDNNLSTM(128),
+        keras.layers.CuDNNGRU(128),
         keras.layers.Dense(10, activation='softmax')
     ])
     model.summary()
@@ -47,10 +47,16 @@ def main():
     log_dir = "logs/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard = keras.callbacks.TensorBoard(log_dir=log_dir, profile_batch=0)
 
+    early_stopping = keras.callbacks.EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True, verbose=1)
+
     model.fit(train_dataset,
               epochs=args.epochs,
               validation_data=test_dataset,
-              callbacks=[tensorboard])
+              callbacks=[tensorboard, early_stopping])
+
+    scores = model.evaluate(test_dataset, verbose=0)
+    for metric, score in zip(model.metrics_names, scores):
+        print('{}: {}'.format(metric, score))
 
 
 if __name__ == '__main__':
