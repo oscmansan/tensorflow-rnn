@@ -54,7 +54,7 @@ def main():
               validation_data=test_dataset,
               callbacks=[tensorboard, early_stopping])
 
-    scores = model.evaluate(test_dataset, verbose=0)
+    scores = model.evaluate(test_dataset, verbose=1)
     for metric, score in zip(model.metrics_names, scores):
         print('{}: {}'.format(metric, score))
 
